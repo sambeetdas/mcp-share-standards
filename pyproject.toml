@@ -1,0 +1,31 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-standards-server"
+version = "1.0.0"
+description = "MCP server for distributing enterprise coding standards (rules & skills) to IDEs like Cursor, VS Code, and Visual Studio."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Enterprise Standards Team" }]
+
+dependencies = [
+    "mcp[cli]>=1.0.0",
+    "pyyaml>=6.0",
+    "pydantic>=2.0",
+    "uvicorn>=0.30.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+[project.scripts]
+mcp-standards = "standards_server.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/standards_server"]

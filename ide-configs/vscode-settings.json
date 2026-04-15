@@ -1,0 +1,10 @@
+{
+  "mcp": {
+    "servers": {
+      "enterprise-standards": {
+        "type": "sse",
+        "url": "http://localhost:8081/sse"
+      }
+    }
+  }
+}

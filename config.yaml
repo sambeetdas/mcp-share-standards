@@ -1,0 +1,31 @@
+# Enterprise MCP Standards Server Configuration
+# ================================================
+
+server:
+  # MCP transport: "stdio" for local IDE integration, "sse" for network deployment
+  transport: stdio
+
+  # SSE server settings (only used when transport=sse)
+  host: 0.0.0.0
+  port: 8080
+
+# Path to the standards directory containing {language}/, {framework}/, and _projects/ subdirs
+# Supports absolute paths or relative to the server's working directory
+#
+# Expected layout:
+#   standards/
+#   ├── csharp/rules/*.md         # C#/.NET rules (combined)
+#   ├── csharp/skills/*/SKILL.md  # C#/.NET skills (combined)
+#   ├── python/rules/*.md         # language-specific rules
+#   ├── _projects/{name}/         # project-specific overrides
+#   └── rules/*.md                # legacy flat layout (fallback)
+standards_dir: ./standards
+
+# Audit & compliance settings
+audit:
+  # Path to persist violation data (JSON). Set to null to disable persistence.
+  file: ./data/audit.json
+
+# Logging configuration
+logging:
+  level: INFO  # DEBUG, INFO, WARNING, ERROR
