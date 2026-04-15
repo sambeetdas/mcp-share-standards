@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "enterprise-standards": {
-      "url": "http://localhost:8081/sse",
-      "disabled": false
-    }
-  }
-}
