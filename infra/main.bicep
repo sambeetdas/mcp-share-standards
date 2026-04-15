@@ -1,102 +1,71 @@
-// MCP Enterprise Standards Server — Azure App Service deployment
-// Deploys: ACR + App Service Plan (Linux) + Web App for Containers
+# Fly.io Deployment
 
-targetScope = 'resourceGroup'
+This directory previously contained Bicep (Azure IaC) templates. Fly.io deployments use a different approach:
 
-@description('Base name used for all resources')
-param appName string = 'mcp-standards'
+## Deployment Files
 
-@description('Azure region for all resources')
-param location string = resourceGroup().location
+- **`fly.toml`** (project root) — Fly.io configuration (app name, region, build, port, etc.)
+- **`.github/workflows/deploy.yml`** — GitHub Actions workflow for automatic deployment on push
 
-@description('SKU for the App Service Plan')
-@allowed(['B1', 'B2', 'B3', 'S1', 'S2', 'S3', 'P1v3', 'P2v3', 'P3v3'])
-param appServiceSkuName string = 'B1'
+## How It Works
 
-@description('SKU for Azure Container Registry')
-@allowed(['Basic', 'Standard', 'Premium'])
-param acrSku string = 'Basic'
+1. **Push to GitHub** — Commit changes and push to `master`
+2. **GitHub Actions triggers** — The workflow in `.github/workflows/deploy.yml` runs
+3. **Fly CLI deploys** — Builds the Docker image and deploys to Fly.io
+4. **Server is live** — Available at `https://mcp-standards-server.fly.dev/sse`
 
-@description('Docker image tag to deploy')
-param imageTag string = 'latest'
+## Setup (One-time)
 
-// Sanitize names for Azure naming rules
-var sanitizedName = replace(toLower(appName), '-', '')
-var uniqueSuffix = uniqueString(resourceGroup().id)
-var acrName = '${sanitizedName}acr${take(uniqueSuffix, 5)}'
-var appServicePlanName = '${appName}-plan'
-var webAppName = '${appName}-app'
-var imageName = 'mcp-standards-server'
+### 1. Create Fly.io Account
+Sign up at https://fly.io (free tier available)
 
-// Azure Container Registry
-resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
-  name: acrName
-  location: location
-  sku: {
-    name: acrSku
-  }
-  properties: {
-    adminUserEnabled: true
-  }
-}
+### 2. Generate Fly API Token
+```bash
+flyctl auth login
+flyctl tokens create deploy --read-write-machines
+```
 
-// App Service Plan (Linux)
-resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
-  name: appServicePlanName
-  location: location
-  kind: 'linux'
-  sku: {
-    name: appServiceSkuName
-  }
-  properties: {
-    reserved: true
-  }
-}
+### 3. Add to GitHub Secrets
+1. Go to your repo Settings → Secrets and variables → Actions
+2. Click "New repository secret"
+3. Name: `FLY_API_TOKEN`
+4. Value: Paste the token from step 2
 
-// Web App for Containers
-resource webApp 'Microsoft.Web/sites@2023-12-01' = {
-  name: webAppName
-  location: location
-  kind: 'app,linux,container'
-  properties: {
-    serverFarmId: appServicePlan.id
-    httpsOnly: true
-    siteConfig: {
-      linuxFxVersion: 'DOCKER|${acr.properties.loginServer}/${imageName}:${imageTag}'
-      alwaysOn: true
-      appSettings: [
-        {
-          name: 'DOCKER_REGISTRY_SERVER_URL'
-          value: 'https://${acr.properties.loginServer}'
-        }
-        {
-          name: 'DOCKER_REGISTRY_SERVER_USERNAME'
-          value: acr.listCredentials().username
-        }
-        {
-          name: 'DOCKER_REGISTRY_SERVER_PASSWORD'
-          value: acr.listCredentials().passwords[0].value
-        }
-        {
-          name: 'WEBSITES_PORT'
-          value: '8080'
-        }
-        {
-          name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
-          value: 'false'
-        }
-        {
-          name: 'MCP_ALLOWED_HOSTS'
-          value: '${webAppName}.azurewebsites.net'
-        }
-      ]
-    }
-  }
-}
+### 4. Update App Name (Optional)
+Edit `fly.toml` and change:
+```toml
+app = "mcp-standards-server"
+```
 
-// Outputs
-output acrLoginServer string = acr.properties.loginServer
-output acrName string = acr.name
-output webAppName string = webApp.name
+## Deployment
+
+Once setup is complete, deployments happen automatically on every push to `master`.
+
+## Manual Deployment
+
+To deploy manually:
+
+```bash
+flyctl deploy
+```
+
+## Logs
+
+View deployment logs:
+```bash
+flyctl logs
+```
+
+View app status:
+```bash
+flyctl status
+```
+
+## No Infrastructure-as-Code Needed
+
+Fly.io handles infrastructure provisioning automatically. You only need:
+- `fly.toml` — App configuration
+- `Dockerfile` — Container definition
+- GitHub Actions workflow — CI/CD automation
 output webAppHostName string = webApp.properties.defaultHostName
 output webAppUrl string = 'https://${webApp.properties.defaultHostName}'
