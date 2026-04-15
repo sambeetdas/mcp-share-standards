@@ -1,4 +1,4 @@
-app = "mcp-standards-server"
+app = "mcp-share-standards"
 primary_region = "lax"
 
 [build]
